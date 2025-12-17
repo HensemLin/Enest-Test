@@ -1,0 +1,71 @@
+version: "3"
+services:
+  api:
+    container_name: "chatbot-api"
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - 8000:8000
+    env_file:
+      - ./.env
+    environment:
+      DATABASE_HOSTNAME: db
+    volumes:
+      - ./backend:/app/backend
+      - ./storage:/app/storage
+    depends_on:
+      - db
+    networks:
+      - pgnetwork
+
+  frontend:
+    container_name: "chatbot-frontend"
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - 3000:3000
+    environment:
+      - API_URL=http://api:8000
+      - API_KEY=${API_KEY}
+    depends_on:
+      - api
+    networks:
+      - pgnetwork
+  db:
+    container_name: "db"
+    image: postgres:15.5
+    command: postgres -c timezone=Asia/Kuala_Lumpur
+    env_file:
+      - ./.env
+    environment:
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      POSTGRES_DB: ${DATABASE_NAME}
+      POSTGRES_USER: ${DATABASE_USERNAME}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgresql_data:/var/lib/postgresql/data
+    networks:
+      - pgnetwork
+  pgadmin:
+    image: dpage/pgadmin4:8.1
+    container_name: pgadmin
+    ports:
+      - "9898:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - pgnetwork
+
+volumes:
+  postgresql_data:
+  pgadmin_data:
+
+networks:
+  pgnetwork:
+    driver: bridge
