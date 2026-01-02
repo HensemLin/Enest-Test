@@ -4,6 +4,13 @@ import type { NextRequest } from 'next/server';
 export function middleware(request: NextRequest) {
   // Only intercept API requests
   if (request.nextUrl.pathname.startsWith('/api/')) {
+    // Skip middleware for endpoints with dedicated API routes
+    // These routes handle their own proxying with extended timeouts
+    const skipPaths = ['/api/chat/message'];
+    if (skipPaths.some(path => request.nextUrl.pathname === path)) {
+      return NextResponse.next();
+    }
+
     // Get the API URL from environment
     const apiUrl = process.env.API_URL || 'http://localhost:8000';
 
